@@ -1,0 +1,42 @@
+﻿<Page
+    x:Class="DevPal.MainPage"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    xmlns:local="using:DevPal"
+    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+    mc:Ignorable="d"
+    Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
+
+    <Grid>
+        <StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0">Path:</TextBlock>
+                <TextBox Grid.Column="1" Name="Input" TextChanged="InputOnTextChanged"></TextBox>
+            </Grid>
+            <StackPanel Orientation="Horizontal">
+                <Button Name="NormalizeBtn" Click="NormalizeOnClick">Normalize</Button>
+                <Button Name="ToCodeBtn" Click="ToCodeOnClick">Code</Button>
+                <Button Name="ToCodeSlashBtn" Click="ToCodeSlashOnClick">Code (Slash)</Button>
+                <Button Name="PyArgsToCommandBtn" Click="PyArgsToCommandOnClick">Python Args to Command</Button>
+                <Button Name="CommandToPyArgsBtn" Click="CommandToPyArgsOnClick">Command to Python Args</Button>
+                <Button Name="QuoteBtn" Click="QuoteOnClick">Quote</Button>
+                <Button Name="UnquoteBtn" Click="UnquoteOnClick">Unquote</Button>
+            </StackPanel>
+            <Grid>
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="100"></ColumnDefinition>
+                    <ColumnDefinition></ColumnDefinition>
+                </Grid.ColumnDefinitions>
+                <TextBlock Grid.Column="0">Result:</TextBlock>
+                <TextBox Grid.Column="1" Name="Output"></TextBox>
+            </Grid>
+            <StackPanel Orientation="Horizontal">
+            </StackPanel>
+        </StackPanel>
+    </Grid>
+</Page>
