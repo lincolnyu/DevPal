@@ -7,7 +7,6 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d"
     Background="{ThemeResource ApplicationPageBackgroundThemeBrush}">
-
     <Grid>
         <StackPanel>
             <Grid>
@@ -16,24 +15,31 @@
                     <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0">Path:</TextBlock>
-                <TextBox Grid.Column="1" Name="Input" TextChanged="InputOnTextChanged"></TextBox>
+                <TextBox Grid.Column="1" Name="Input"
+                         TextChanged="InputOnTextChanged"></TextBox>
             </Grid>
-            <StackPanel Orientation="Horizontal">
-                <Button Name="NormalizeBtn" Click="NormalizeOnClick">Normalize</Button>
-                <Button Name="ToCodeBtn" Click="ToCodeOnClick">Code</Button>
-                <Button Name="ToCodeSlashBtn" Click="ToCodeSlashOnClick">Code (Slash)</Button>
-                <Button Name="PyArgsToCommandBtn" Click="PyArgsToCommandOnClick">Python Args to Command</Button>
-                <Button Name="CommandToPyArgsBtn" Click="CommandToPyArgsOnClick">Command to Python Args</Button>
-                <Button Name="QuoteBtn" Click="QuoteOnClick">Quote</Button>
-                <Button Name="UnquoteBtn" Click="UnquoteOnClick">Unquote</Button>
-            </StackPanel>
+            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="80">
+                <CheckBox Name="Inplace" Click="InplaceOnClicked">In place</CheckBox>
+                <Button Name="CopyToClipboardBtn" Click="CopyToClipboardOnClick" VariableSizedWrapGrid.ColumnSpan="3">Copy result to Clipboard</Button>
+                <Button Name="UndoBtn" Click="UndoOnClick" >Undo</Button>
+                <Button Name="RedoBtn" Click="RedoOnClick" >Redo</Button>
+            </VariableSizedWrapGrid>
+            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="80">
+                <Button Name="NormalizeBtn" Click="NormalizeOnClick" HorizontalAlignment="Center">Normalize</Button>
+                <Button Name="ToCodeBtn" Click="ToCodeOnClick" HorizontalAlignment="Center">Code</Button>
+                <Button Name="ToCodeSlashBtn" Click="ToCodeSlashOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Code (Slash)</Button>
+                <Button Name="PyArgsToCommandBtn" Click="PyArgsToCommandOnClick" VariableSizedWrapGrid.ColumnSpan="3" HorizontalAlignment="Center">Python Args to Command</Button>
+                <Button Name="CommandToPyArgsBtn" Click="CommandToPyArgsOnClick" VariableSizedWrapGrid.ColumnSpan="3" HorizontalAlignment="Center">Command to Python Args</Button>
+                <Button Name="QuoteBtn" Click="QuoteOnClick" HorizontalAlignment="Center">Quote</Button>
+                <Button Name="UnquoteBtn" Click="UnquoteOnClick" HorizontalAlignment="Center">Unquote</Button>
+            </VariableSizedWrapGrid>
             <Grid>
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="100"></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0">Result:</TextBlock>
-                <TextBox Grid.Column="1" Name="Output"></TextBox>
+                <TextBox Grid.Column="1" Name="Output" IsReadOnly="True"></TextBox>
             </Grid>
             <StackPanel Orientation="Horizontal">
             </StackPanel>

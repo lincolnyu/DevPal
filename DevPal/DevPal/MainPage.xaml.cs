@@ -3,8 +3,11 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using Windows.ApplicationModel.DataTransfer;
+using Windows.UI;
 using Windows.UI.Xaml;
 using Windows.UI.Xaml.Controls;
+using Windows.UI.Xaml.Media;
 
 // The Blank Page item template is documented at https://go.microsoft.com/fwlink/?LinkId=402352&clcid=0x409
 
@@ -23,74 +26,145 @@ namespace DevPal
             Path,
         }
 
+
+        private bool _inputValueReady;
+        private bool _inplace;
+        private LinkedList<string> _history = new LinkedList<string>();
+        private LinkedListNode<string> _current = null;
+
         public MainPage()
         {
             InitializeComponent();
+
+            Input.GotFocus += (sender, e) =>
+            {
+                Input.Foreground = new SolidColorBrush(Colors.Black);
+                if (!_inputValueReady)
+                {
+                    Input.Text = "";
+                    _inputValueReady = true;
+                }
+            };
+            Input.LostFocus += (sender, e) =>
+            {
+                UpdateInputToHistory(Input.Text);
+
+                if (string.IsNullOrWhiteSpace(Input.Text))
+                {
+                    Input.Foreground = new SolidColorBrush(Colors.LightGray);
+                    Input.Text = "Enter text here ...";
+                    _inputValueReady = false;
+                }
+            };
+
+            UpdateUndoRedoUI();
+        }
+
+        private string InputText() => _inputValueReady ? Input.Text : "";
+
+        private void SetInputText(string s, bool updateHistory = true)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                Input.Foreground = new SolidColorBrush(Colors.LightGray);
+                Input.Text = "Enter text here ...";
+                _inputValueReady = false;
+            }
+            else
+            {
+                Input.Foreground = new SolidColorBrush(Colors.Black);
+                Input.Text = s;
+                _inputValueReady = true;
+            }
+
+            if (updateHistory)
+            {
+                UpdateInputToHistory(s);
+            }
+        }
+
+        private void UpdateInputToHistory(string s)
+        {
+            if (_current != null)
+            {
+                for (var p = _current.Next; p != null; )
+                {
+                    var next = p.Next;
+                    _history.Remove(p);
+                    p = next;
+                }
+            }
+            _history.AddLast(s);
+            _current = _history.Last;
+            UpdateUndoRedoUI();
         }
 
         private void NormalizeOnClick(object sender, RoutedEventArgs e)
         {
-            var s = NormalizePath(Input.Text);
-            Output.Text = s;
+            var s = NormalizePath(InputText());
+            SetResult(s);
         }
 
         private void ToCodeOnClick(object sender, RoutedEventArgs e)
         {
-            var s = NormalizePath(Input.Text);
-            Output.Text = ToCode(s, false);
+            var s = NormalizePath(InputText());
+            s = ToCode(s, false);
+            SetResult(s);
         }
 
         private void ToCodeSlashOnClick(object sender, RoutedEventArgs e)
         {
-            var s = NormalizePath(Input.Text);
-            Output.Text = ToCode(s, true);
+            var s = NormalizePath(InputText());
+            s = ToCode(s, true);
+            SetResult(s);
         }
 
         private void PyArgsToCommandOnClick(object sender, RoutedEventArgs e)
         {
-            var args = PyArgsToCommand(Input.Text);
+            var args = PyArgsToCommand(InputText());
             var sb = new StringBuilder();
             foreach (var arg in args)
             {
                 sb.Append(arg);
                 sb.Append(' ');
             }
-            Output.Text = sb.ToString().TrimEnd();
+            var res = sb.ToString().TrimEnd();
+            SetResult(res);
         }
 
         private void CommandToPyArgsOnClick(object sender, RoutedEventArgs e)
         {
-            var args = CommandToPyArgs(Input.Text);
+            var args = CommandToPyArgs(InputText());
             var sb = new StringBuilder("[");
             foreach (var arg in args)
             {
                 sb.Append(arg);
                 sb.Append(',');
             }
-            if (sb.Length > 0 && sb[sb.Length-1] == ',')
+            if (sb.Length > 0 && sb[sb.Length - 1] == ',')
             {
                 sb.Remove(sb.Length - 1, 1);
             }
             sb.Append(']');
-            Output.Text = sb.ToString();
+            SetResult(sb.ToString());
         }
 
         private void QuoteOnClick(object sender, RoutedEventArgs e)
         {
-            var s = Escape(Input.Text, '"');
-            Output.Text = $"\"{s}\"";
+            var s = Escape(InputText(), '"');
+            SetResult($"\"{s}\"");
         }
 
         private void UnquoteOnClick(object sender, RoutedEventArgs e)
         {
-            var s = Input.Text.Trim();
-            if (s.Length > 2 && s[0] == s[s.Length-1] && (s[0] == '\'' || s[0] == '"'))
+            var s = InputText().Trim();
+            if (s.Length > 2 && s[0] == s[s.Length - 1] && (s[0] == '\'' || s[0] == '"'))
             {
                 var c = s[0];
                 s = s.Substring(1, s.Length - 2);
                 s = UnEscape(s);
             }
-            Output.Text = s;
+            SetResult(s);
         }
 
         private bool StartWithDriverLetter(string s)
@@ -192,7 +266,7 @@ namespace DevPal
         // s has space trimed
         private bool NeedQuote(string s)
         {
-            for (var i = 1; i < s.Length-1; i++)
+            for (var i = 1; i < s.Length - 1; i++)
             {
                 if (char.IsWhiteSpace(s[i]) || s[i] == '"' || s[i] == '\'')
                 {
@@ -239,7 +313,7 @@ namespace DevPal
         {
             var r = s.Trim();
             r = r.Trim('[', ']');
-            var ss = SplitBy(r, c=>c==',');
+            var ss = SplitBy(r, c => c == ',');
             foreach (var seg in ss)
             {
                 var arg = seg.Trim();
@@ -255,7 +329,7 @@ namespace DevPal
         private IEnumerable<string> CommandToPyArgs(string s, char quoteChar = '\"')
         {
             var r = s.Trim();
-            var ss = SplitBy(r, c=>char.IsWhiteSpace(c));
+            var ss = SplitBy(r, c => char.IsWhiteSpace(c));
             foreach (var seg in ss)
             {
                 var arg = seg.Trim();
@@ -271,8 +345,8 @@ namespace DevPal
             {
                 return InputTypes.Empty;
             }
-            var sc = SplitBy(s, c=>c==',');
-            if (sc.Count() > 1)
+            var sc = SplitBy(s, c => c == ',');
+            if (sc.Count() > 1 || s.StartsWith('[') && s.EndsWith(']'))
             {
                 return InputTypes.PythonArgs;
             }
@@ -286,7 +360,7 @@ namespace DevPal
 
         private void InputOnTextChanged(object sender, TextChangedEventArgs e)
         {
-            var t = DetectType(Input.Text);
+            var t = DetectType(InputText());
             switch (t)
             {
                 case InputTypes.Empty:
@@ -318,6 +392,71 @@ namespace DevPal
                     CommandToPyArgsBtn.IsEnabled = true;
                     break;
             }
+        }
+
+        private void CopyToClipboardOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = GetResult();
+            var pkg = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+            pkg.SetText(s);
+            Clipboard.SetContent(pkg);
+        }
+
+        private void InplaceOnClicked(object sender, RoutedEventArgs e)
+            => UpdateInplace();
+
+        private void UpdateInplace()
+        {
+            _inplace = Inplace.IsChecked == true;
+            Output.IsEnabled = !_inplace;
+        }
+
+        private void SetResult(string s)
+        {
+            if (_inplace)
+            {
+                SetInputText(s);
+            }
+            else
+            {
+                Output.Text = s;
+            }
+        }
+
+        private string GetResult() => _inplace ? InputText() : Output.Text;
+
+        private void UpdateUndoRedoUI()
+        {
+            if (_current == null)
+            {
+                UndoBtn.IsEnabled = false;
+                RedoBtn.IsEnabled = false;
+            }
+            else
+            {
+                UndoBtn.IsEnabled = (_current != _history.First);
+                RedoBtn.IsEnabled = (_current != _history.Last);
+            }
+        }
+
+        private void UndoOnClick(object sender, RoutedEventArgs e)
+        {
+            if (_current != null && _current.Previous != null)
+            {
+                _current = _current.Previous;
+                SetInputText(_current.Value, false);
+            }
+            UpdateUndoRedoUI();
+        }
+
+        private void RedoOnClick(object sender, RoutedEventArgs e)
+        {
+            if (_current != null && _current.Next != null)
+            {
+                _current = _current.Next;
+                SetInputText(_current.Value, false);
+            }
+            UpdateUndoRedoUI();
         }
     }
 }
