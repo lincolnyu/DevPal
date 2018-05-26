@@ -58,6 +58,7 @@ namespace DevPal
             };
 
             UpdateUndoRedoUI();
+            UpdateBtnEnabledStates();
         }
 
         private string InputText() => _inputValueReady ? Input.Text : "";
@@ -153,6 +154,12 @@ namespace DevPal
         {
             var s = Escape(InputText(), '"');
             SetResult($"\"{s}\"");
+        }
+
+        private void QuoteSingleOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = Escape(InputText(), '\'');
+            SetResult($"\'{s}\'");
         }
 
         private void UnquoteOnClick(object sender, RoutedEventArgs e)
@@ -339,6 +346,12 @@ namespace DevPal
             }
         }
 
+        private bool IsQuoted(string s)
+        {
+            return (s.StartsWith('\'') && s.EndsWith('\'')
+                || s.StartsWith('\"') && s.EndsWith('\"'));
+        }
+
         private InputTypes DetectType(string s)
         {
             if (string.IsNullOrWhiteSpace(s))
@@ -359,8 +372,13 @@ namespace DevPal
         }
 
         private void InputOnTextChanged(object sender, TextChangedEventArgs e)
+            => UpdateBtnEnabledStates();
+
+        private void UpdateBtnEnabledStates()
         {
-            var t = DetectType(InputText());
+            var s = InputText();
+            var t = DetectType(s);
+            UnquoteBtn.IsEnabled = IsQuoted(s);
             switch (t)
             {
                 case InputTypes.Empty:

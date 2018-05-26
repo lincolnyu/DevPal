@@ -30,7 +30,8 @@
                 <Button Name="ToCodeSlashBtn" Click="ToCodeSlashOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Code (Slash)</Button>
                 <Button Name="PyArgsToCommandBtn" Click="PyArgsToCommandOnClick" VariableSizedWrapGrid.ColumnSpan="3" HorizontalAlignment="Center">Python Args to Command</Button>
                 <Button Name="CommandToPyArgsBtn" Click="CommandToPyArgsOnClick" VariableSizedWrapGrid.ColumnSpan="3" HorizontalAlignment="Center">Command to Python Args</Button>
-                <Button Name="QuoteBtn" Click="QuoteOnClick" HorizontalAlignment="Center">Quote</Button>
+                <Button Name="QuoteBtn" Click="QuoteOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Double Quote</Button>
+                <Button Name="QuoteSingleBtn" Click="QuoteSingleOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Single Quote</Button>
                 <Button Name="UnquoteBtn" Click="UnquoteOnClick" HorizontalAlignment="Center">Unquote</Button>
             </VariableSizedWrapGrid>
             <Grid>
