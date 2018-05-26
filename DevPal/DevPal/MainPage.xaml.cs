@@ -26,6 +26,9 @@ namespace DevPal
             Path,
         }
 
+        private static readonly SolidColorBrush LightGrayBrush = new SolidColorBrush(Colors.LightGray);
+        private static readonly SolidColorBrush GrayBrush = new SolidColorBrush(Colors.Gray);
+        private static readonly SolidColorBrush BlackBrush = new SolidColorBrush(Colors.Black);
 
         private bool _inputValueReady;
         private bool _inplace;
@@ -61,44 +64,7 @@ namespace DevPal
             UpdateBtnEnabledStates();
         }
 
-        private string InputText() => _inputValueReady ? Input.Text : "";
-
-        private void SetInputText(string s, bool updateHistory = true)
-        {
-            if (string.IsNullOrWhiteSpace(s))
-            {
-                Input.Foreground = new SolidColorBrush(Colors.LightGray);
-                Input.Text = "Enter text here ...";
-                _inputValueReady = false;
-            }
-            else
-            {
-                Input.Foreground = new SolidColorBrush(Colors.Black);
-                Input.Text = s;
-                _inputValueReady = true;
-            }
-
-            if (updateHistory)
-            {
-                UpdateInputToHistory(s);
-            }
-        }
-
-        private void UpdateInputToHistory(string s)
-        {
-            if (_current != null)
-            {
-                for (var p = _current.Next; p != null; )
-                {
-                    var next = p.Next;
-                    _history.Remove(p);
-                    p = next;
-                }
-            }
-            _history.AddLast(s);
-            _current = _history.Last;
-            UpdateUndoRedoUI();
-        }
+        #region Event handlers
 
         private void NormalizeOnClick(object sender, RoutedEventArgs e)
         {
@@ -174,63 +140,81 @@ namespace DevPal
             SetResult(s);
         }
 
-        private bool StartWithDriverLetter(string s)
+        private void InputOnTextChanged(object sender, TextChangedEventArgs e)
+            => UpdateBtnEnabledStates();
+
+        private void CopyToClipboardOnClick(object sender, RoutedEventArgs e)
         {
-            if (s.Length < 2) return false;
-            if (char.IsLetter(s[0]))
-            {
-                var i = 0;
-                for (; i < s.Length && char.IsLetter(s[i]); i++) ;
-                if (i >= s.Length) return false;
-                return s[i] == ':';
-            }
-            return false;
+            var s = GetResult();
+            var pkg = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
+            pkg.SetText(s);
+            Clipboard.SetContent(pkg);
         }
 
-        private bool IsWindowsPath(string s)
-            => s.StartsWith(@"\\\\") || s.Contains("\\") || StartWithDriverLetter(s);
+        private void InplaceOnClicked(object sender, RoutedEventArgs e)
+            => UpdateInplace();
 
-        private string NormalizePath(string input)
+        private void UndoOnClick(object sender, RoutedEventArgs e)
         {
-            var r = input.Trim();
-            if (IsWindowsPath(r))
+            if (_current != null && _current.Previous != null)
             {
-                r = r.Replace(@"\\", @"\");
-                r = r.Replace("/", @"\");
+                _current = _current.Previous;
+                SetInputText(_current.Value, false);
+            }
+            UpdateUndoRedoUI();
+        }
+
+        private void RedoOnClick(object sender, RoutedEventArgs e)
+        {
+            if (_current != null && _current.Next != null)
+            {
+                _current = _current.Next;
+                SetInputText(_current.Value, false);
+            }
+            UpdateUndoRedoUI();
+        }
+
+        #endregion
+
+        #region UI functions
+
+        private string InputText() => _inputValueReady ? Input.Text : "";
+
+        private void SetInputText(string s, bool updateHistory = true)
+        {
+            if (string.IsNullOrWhiteSpace(s))
+            {
+                Input.Foreground = LightGrayBrush;
+                Input.Text = "Enter text here ...";
+                _inputValueReady = false;
             }
             else
             {
-                // TODO anything needed?
+                Input.Foreground = BlackBrush;
+                Input.Text = s;
+                _inputValueReady = true;
             }
-            return r;
+
+            if (updateHistory)
+            {
+                UpdateInputToHistory(s);
+            }
         }
 
-        private string ToCode(string normalizedPath, bool useSlash)
+        private void UpdateInputToHistory(string s)
         {
-            if (IsWindowsPath(normalizedPath))
+            if (_current != null)
             {
-                if (useSlash)
+                for (var p = _current.Next; p != null;)
                 {
-                    if (normalizedPath.StartsWith(@"\\"))
-                    {
-                        var r = @"\\\\"
-                            + normalizedPath.Substring(2).Replace(@"\", "/");
-                        return r;
-                    }
-                    else
-                    {
-                        return normalizedPath.Replace(@"\", "/");
-                    }
-                }
-                else
-                {
-                    return normalizedPath.Replace(@"\", @"\\");
+                    var next = p.Next;
+                    _history.Remove(p);
+                    p = next;
                 }
             }
-            else
-            {
-                return normalizedPath.Replace(@"\", @"\\");
-            }
+            _history.AddLast(s);
+            _current = _history.Last;
+            UpdateUndoRedoUI();
         }
 
         private IEnumerable<string> SplitBy(string s, Predicate<char> isSplitter)
@@ -260,6 +244,114 @@ namespace DevPal
             {
                 yield return t;
             }
+        }
+
+        private void UpdateBtnEnabledStates()
+        {
+            var s = InputText();
+            var t = DetectType(s);
+            UnquoteBtn.IsEnabled = IsQuoted(s);
+            switch (t)
+            {
+                case InputTypes.Empty:
+                    NormalizeBtn.IsEnabled = false;
+                    ToCodeBtn.IsEnabled = false;
+                    ToCodeSlashBtn.IsEnabled = false;
+                    PyArgsToCommandBtn.IsEnabled = false;
+                    CommandToPyArgsBtn.IsEnabled = false;
+                    break;
+                case InputTypes.PythonArgs:
+                    NormalizeBtn.IsEnabled = false;
+                    ToCodeBtn.IsEnabled = false;
+                    ToCodeSlashBtn.IsEnabled = false;
+                    PyArgsToCommandBtn.IsEnabled = true;
+                    CommandToPyArgsBtn.IsEnabled = false;
+                    break;
+                case InputTypes.CommandLine:
+                    NormalizeBtn.IsEnabled = false;
+                    ToCodeBtn.IsEnabled = false;
+                    ToCodeSlashBtn.IsEnabled = false;
+                    PyArgsToCommandBtn.IsEnabled = false;
+                    CommandToPyArgsBtn.IsEnabled = true;
+                    break;
+                case InputTypes.Path:
+                    NormalizeBtn.IsEnabled = true;
+                    ToCodeBtn.IsEnabled = true;
+                    ToCodeSlashBtn.IsEnabled = true;
+                    PyArgsToCommandBtn.IsEnabled = false;
+                    CommandToPyArgsBtn.IsEnabled = true;
+                    break;
+            }
+        }
+
+        private void UpdateInplace()
+        {
+            _inplace = Inplace.IsChecked == true;
+            Output.IsEnabled = !_inplace;
+            OutputLabel.Foreground = _inplace ? GrayBrush : BlackBrush;
+        }
+
+        private void SetResult(string s)
+        {
+            if (_inplace)
+            {
+                SetInputText(s);
+            }
+            else
+            {
+                Output.Text = s;
+            }
+        }
+
+        private string GetResult() => _inplace ? InputText() : Output.Text;
+
+        private void UpdateUndoRedoUI()
+        {
+            if (_current == null)
+            {
+                UndoBtn.IsEnabled = false;
+                RedoBtn.IsEnabled = false;
+            }
+            else
+            {
+                UndoBtn.IsEnabled = (_current != _history.First);
+                RedoBtn.IsEnabled = (_current != _history.Last);
+            }
+        }
+
+        #endregion
+
+        #region String functions
+
+        private bool StartWithDriverLetter(string s)
+        {
+            if (s.Length < 2) return false;
+            if (char.IsLetter(s[0]))
+            {
+                var i = 0;
+                for (; i < s.Length && char.IsLetter(s[i]); i++) ;
+                if (i >= s.Length) return false;
+                return s[i] == ':';
+            }
+            return false;
+        }
+
+        private bool IsWindowsPath(string s)
+            => s.StartsWith(@"\\\\") || s.Contains("\\") || StartWithDriverLetter(s);
+
+        private string NormalizePath(string input)
+        {
+            var r = input.Trim();
+            if (IsWindowsPath(r))
+            {
+                r = r.Replace(@"\\", @"\");
+                r = r.Replace("/", @"\");
+            }
+            else
+            {
+                // TODO anything needed?
+            }
+            return r;
         }
 
         private string TrimQuotes(string s)
@@ -363,7 +455,7 @@ namespace DevPal
             {
                 return InputTypes.PythonArgs;
             }
-            var ss = SplitBy(s, c=>char.IsWhiteSpace(c));
+            var ss = SplitBy(s, c => char.IsWhiteSpace(c));
             if (ss.Count() > 1)
             {
                 return InputTypes.CommandLine;
@@ -371,110 +463,34 @@ namespace DevPal
             return InputTypes.Path;
         }
 
-        private void InputOnTextChanged(object sender, TextChangedEventArgs e)
-            => UpdateBtnEnabledStates();
-
-        private void UpdateBtnEnabledStates()
+        private string ToCode(string normalizedPath, bool useSlash)
         {
-            var s = InputText();
-            var t = DetectType(s);
-            UnquoteBtn.IsEnabled = IsQuoted(s);
-            switch (t)
+            if (IsWindowsPath(normalizedPath))
             {
-                case InputTypes.Empty:
-                    NormalizeBtn.IsEnabled = false;
-                    ToCodeBtn.IsEnabled = false;
-                    ToCodeSlashBtn.IsEnabled = false;
-                    PyArgsToCommandBtn.IsEnabled = false;
-                    CommandToPyArgsBtn.IsEnabled = false;
-                    break;
-                case InputTypes.PythonArgs:
-                    NormalizeBtn.IsEnabled = false;
-                    ToCodeBtn.IsEnabled = false;
-                    ToCodeSlashBtn.IsEnabled = false;
-                    PyArgsToCommandBtn.IsEnabled = true;
-                    CommandToPyArgsBtn.IsEnabled = false;
-                    break;
-                case InputTypes.CommandLine:
-                    NormalizeBtn.IsEnabled = false;
-                    ToCodeBtn.IsEnabled = false;
-                    ToCodeSlashBtn.IsEnabled = false;
-                    PyArgsToCommandBtn.IsEnabled = false;
-                    CommandToPyArgsBtn.IsEnabled = true;
-                    break;
-                case InputTypes.Path:
-                    NormalizeBtn.IsEnabled = true;
-                    ToCodeBtn.IsEnabled = true;
-                    ToCodeSlashBtn.IsEnabled = true;
-                    PyArgsToCommandBtn.IsEnabled = false;
-                    CommandToPyArgsBtn.IsEnabled = true;
-                    break;
-            }
-        }
-
-        private void CopyToClipboardOnClick(object sender, RoutedEventArgs e)
-        {
-            var s = GetResult();
-            var pkg = new DataPackage { RequestedOperation = DataPackageOperation.Copy };
-            pkg.SetText(s);
-            Clipboard.SetContent(pkg);
-        }
-
-        private void InplaceOnClicked(object sender, RoutedEventArgs e)
-            => UpdateInplace();
-
-        private void UpdateInplace()
-        {
-            _inplace = Inplace.IsChecked == true;
-            Output.IsEnabled = !_inplace;
-        }
-
-        private void SetResult(string s)
-        {
-            if (_inplace)
-            {
-                SetInputText(s);
+                if (useSlash)
+                {
+                    if (normalizedPath.StartsWith(@"\\"))
+                    {
+                        var r = @"\\\\"
+                            + normalizedPath.Substring(2).Replace(@"\", "/");
+                        return r;
+                    }
+                    else
+                    {
+                        return normalizedPath.Replace(@"\", "/");
+                    }
+                }
+                else
+                {
+                    return normalizedPath.Replace(@"\", @"\\");
+                }
             }
             else
             {
-                Output.Text = s;
+                return normalizedPath.Replace(@"\", @"\\");
             }
         }
 
-        private string GetResult() => _inplace ? InputText() : Output.Text;
-
-        private void UpdateUndoRedoUI()
-        {
-            if (_current == null)
-            {
-                UndoBtn.IsEnabled = false;
-                RedoBtn.IsEnabled = false;
-            }
-            else
-            {
-                UndoBtn.IsEnabled = (_current != _history.First);
-                RedoBtn.IsEnabled = (_current != _history.Last);
-            }
-        }
-
-        private void UndoOnClick(object sender, RoutedEventArgs e)
-        {
-            if (_current != null && _current.Previous != null)
-            {
-                _current = _current.Previous;
-                SetInputText(_current.Value, false);
-            }
-            UpdateUndoRedoUI();
-        }
-
-        private void RedoOnClick(object sender, RoutedEventArgs e)
-        {
-            if (_current != null && _current.Next != null)
-            {
-                _current = _current.Next;
-                SetInputText(_current.Value, false);
-            }
-            UpdateUndoRedoUI();
-        }
+        #endregion
     }
 }

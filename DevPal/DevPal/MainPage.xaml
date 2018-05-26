@@ -39,7 +39,7 @@
                     <ColumnDefinition Width="100"></ColumnDefinition>
                     <ColumnDefinition></ColumnDefinition>
                 </Grid.ColumnDefinitions>
-                <TextBlock Grid.Column="0">Result:</TextBlock>
+                <TextBlock Grid.Column="0" Name="OutputLabel">Result:</TextBlock>
                 <TextBox Grid.Column="1" Name="Output" IsReadOnly="True"></TextBox>
             </Grid>
             <StackPanel Orientation="Horizontal">
