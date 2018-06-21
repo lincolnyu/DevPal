@@ -342,7 +342,12 @@ namespace DevPal
         private string NormalizePath(string input)
         {
             var r = input.Trim();
-            if (IsWindowsPath(r))
+            var isExplicitWindowsPath = r.StartsWith("WindowsPath('") && r.EndsWith("')");
+            if (isExplicitWindowsPath)
+            {
+                r = r.Substring("WindowsPath('".Length, r.Length - "WindowsPath('".Length - "')".Length);
+            }
+            if (isExplicitWindowsPath || IsWindowsPath(r))
             {
                 r = r.Replace(@"\\", @"\");
                 r = r.Replace("/", @"\");
