@@ -356,6 +356,8 @@ namespace DevPal
             {
                 // TODO anything needed?
             }
+            r = r.Replace("\r", "");
+            r = r.Replace("\n", "");
             return r;
         }
 
@@ -460,12 +462,47 @@ namespace DevPal
             {
                 return InputTypes.PythonArgs;
             }
-            var ss = SplitBy(s, c => char.IsWhiteSpace(c));
-            if (ss.Count() > 1)
+            if (IsPath(s))
             {
-                return InputTypes.CommandLine;
+                return InputTypes.Path;
             }
-            return InputTypes.Path;
+            return InputTypes.CommandLine;
+        }
+
+        private bool IsPath(string s)
+        {
+            var np = NormalizePath(s);
+            var escapeNeeded = new HashSet<char>();
+            if (np.StartsWith('"') && np.EndsWith('"') || np.StartsWith('\'') && np.EndsWith('\''))
+            {
+                np = np.Substring(1, np.Length - 2);
+                if (np.Contains('"')) return false;
+                if (np.StartsWith('\'') && np.EndsWith('\''))
+                {
+                    escapeNeeded.Add('\'');
+                }
+            }
+            else if (!np.StartsWith('"') && !np.StartsWith('\'')
+                && !np.EndsWith('"') && !np.EndsWith('\''))
+            {
+                escapeNeeded.Add(' ');
+            }
+            for (var i = 0; i < np.Length; i++)
+            {
+                var c = np[i];
+                if (escapeNeeded.Contains(c))
+                {
+                    if (i == 0 || np[i - 1] != '\\' || i >= 2 && np[i - 2] == '\\')
+                    {
+                        return false;
+                    }
+                }
+                else if (char.IsWhiteSpace(c))
+                {
+                    return false;
+                }
+            }
+            return true;
         }
 
         private string ToCode(string normalizedPath, bool useSlash)

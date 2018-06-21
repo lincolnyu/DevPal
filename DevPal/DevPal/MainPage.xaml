@@ -16,7 +16,7 @@
                 </Grid.ColumnDefinitions>
                 <TextBlock Grid.Column="0">Path:</TextBlock>
                 <TextBox Grid.Column="1" Name="Input"
-                         TextChanged="InputOnTextChanged"></TextBox>
+                         TextChanged="InputOnTextChanged" TextWrapping="NoWrap" AcceptsReturn="True"></TextBox>
             </Grid>
             <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="80">
                 <CheckBox Name="Inplace" Click="InplaceOnClicked">In place</CheckBox>
