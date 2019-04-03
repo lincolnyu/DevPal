@@ -86,6 +86,34 @@ namespace DevPal
             SetResult(s);
         }
 
+        private void ToUnderscoreDelimitedBtnOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = NormalizePath(InputText());
+            s = ToUnderscoreDelimited(s);
+            SetResult(s);
+        }
+
+        private void ToCamelCaseBtnOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = NormalizePath(InputText());
+            s = ToCamelCase(s);
+            SetResult(s);
+        }
+
+        private void ToAllUpperBtnOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = NormalizePath(InputText());
+            s = s.ToUpper();
+            SetResult(s);
+        }
+
+        private void ToAllLowerBtnOnClick(object sender, RoutedEventArgs e)
+        {
+            var s = NormalizePath(InputText());
+            s = s.ToLower();
+            SetResult(s);
+        }
+
         private void PyArgsToCommandOnClick(object sender, RoutedEventArgs e)
         {
             var args = PyArgsToCommand(InputText());
@@ -532,6 +560,109 @@ namespace DevPal
                 return normalizedPath.Replace(@"\", @"\\");
             }
         }
+
+        #region Variable conversions
+        private IEnumerable<string> ConvertVariabeToUnified(string varname)
+        {
+            var sb = new StringBuilder();
+            var waswasDelim = false;
+            var wasDelim = false;
+            var wasLower = true;
+            foreach (var c in varname)
+            {
+                if (c == ' ' || c == '_')
+                {
+                    if (sb.Length > 0)
+                    {
+                        yield return sb.ToString().ToLower();
+                        sb.Clear();
+                    }
+                    waswasDelim = wasDelim;
+                    wasDelim = true;
+                    continue;
+                }
+
+                if (char.IsUpper(c))
+                {
+                    if (wasLower)
+                    {
+                        if (sb.Length > 0)
+                        {
+                            yield return sb.ToString().ToLower();
+                            sb.Clear();
+                        }
+                    }
+                    sb.Append(c);
+                    wasLower = false;
+                }
+                else
+                {
+                    if (!wasLower)
+                    {
+                        if (sb.Length > 1 || waswasDelim)
+                        {
+                            yield return sb.ToString().Substring(0, sb.Length - 1).ToUpper();
+                            sb.Remove(0, sb.Length - 1);
+                        }
+                    }
+                    sb.Append(c);
+                    wasLower = true;
+                }
+
+                waswasDelim = wasDelim;
+                wasDelim = false;
+            }
+
+            if (!wasLower && (sb.Length > 1 || waswasDelim))
+            {
+                yield return sb.ToString().ToUpper();
+            }
+            else
+            {
+                yield return sb.ToString().ToLower();
+            }
+        }
+
+        private string ToUnderscoreDelimited(string s)
+        {
+            var segs = ConvertVariabeToUnified(s);
+            var sb = new StringBuilder();
+            foreach (var seg in segs)
+            {
+                sb.Append(seg);
+                sb.Append("_");
+            }
+            sb.Remove(sb.Length - 1, 1);
+            return sb.ToString();
+        }
+
+        private string ToCamelCase(string s)
+        {
+            var segs = ConvertVariabeToUnified(s);
+            var sb = new StringBuilder();
+
+            var first = true;
+            foreach (var seg in segs)
+            {
+                if (first)
+                {
+                    sb.Append(seg);
+                    first = false;
+                }
+                else
+                {
+                    sb.Append(char.ToUpper(seg[0]));
+                    if (seg.Length > 1)
+                    {
+                        sb.Append(seg.Substring(1));
+                    }
+                }
+            }
+            sb.Remove(sb.Length - 1, 1);
+            return sb.ToString();
+        }
+
+        #endregion
 
         #endregion
     }

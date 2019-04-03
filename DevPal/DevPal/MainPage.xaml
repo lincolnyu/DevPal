@@ -24,7 +24,7 @@
                 <Button Name="UndoBtn" Click="UndoOnClick" >Undo</Button>
                 <Button Name="RedoBtn" Click="RedoOnClick" >Redo</Button>
             </VariableSizedWrapGrid>
-            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="80">
+            <VariableSizedWrapGrid Orientation="Horizontal" ItemWidth="120" >
                 <Button Name="NormalizeBtn" Click="NormalizeOnClick" HorizontalAlignment="Center">Normalize</Button>
                 <Button Name="ToCodeBtn" Click="ToCodeOnClick" HorizontalAlignment="Center">Code</Button>
                 <Button Name="ToCodeSlashBtn" Click="ToCodeSlashOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Code (Slash)</Button>
@@ -33,6 +33,10 @@
                 <Button Name="QuoteBtn" Click="QuoteOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Double Quote</Button>
                 <Button Name="QuoteSingleBtn" Click="QuoteSingleOnClick" VariableSizedWrapGrid.ColumnSpan="2" HorizontalAlignment="Center">Single Quote</Button>
                 <Button Name="UnquoteBtn" Click="UnquoteOnClick" HorizontalAlignment="Center">Unquote</Button>
+                <Button Name="ToUnderscoreDelimitedBtn" Click="ToUnderscoreDelimitedBtnOnClick" HorizontalAlignment="Center">To Underscore Delimited</Button>
+                <Button Name="ToCamelCaseBtn" Click="ToCamelCaseBtnOnClick" HorizontalAlignment="Center">To Camel Case</Button>
+                <Button Name="ToAllUpperBtn" Click="ToAllUpperBtnOnClick" HorizontalAlignment="Center">To All Upper</Button>
+                <Button Name="ToAllLowerBtn" Click="ToAllLowerBtnOnClick" HorizontalAlignment="Center">To All Lower</Button>
             </VariableSizedWrapGrid>
             <Grid>
                 <Grid.ColumnDefinitions>
