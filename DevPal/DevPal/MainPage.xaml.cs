@@ -577,7 +577,6 @@ namespace DevPal
                         yield return sb.ToString().ToLower();
                         sb.Clear();
                     }
-                    waswasDelim = wasDelim;
                     wasDelim = true;
                     continue;
                 }
@@ -597,13 +596,18 @@ namespace DevPal
                 }
                 else
                 {
-                    if (!wasLower)
+                    if (!wasLower && sb.Length > 1)
                     {
-                        if (sb.Length > 1 || waswasDelim)
+                        var past = sb.ToString().Substring(0, sb.Length - 1);
+                        if (sb.Length > 2 || sb.Length == 2 && waswasDelim)
                         {
-                            yield return sb.ToString().Substring(0, sb.Length - 1).ToUpper();
-                            sb.Remove(0, sb.Length - 1);
+                            yield return past.ToUpper();
                         }
+                        else
+                        {
+                            yield return past.ToLower();
+                        }
+                        sb.Remove(0, sb.Length - 1);
                     }
                     sb.Append(c);
                     wasLower = true;
